@@ -56,7 +56,7 @@ step_fetch() {
   check_machine
   say "Cài công cụ cơ bản"
   sudo apt-get update -q
-  sudo apt-get install -y -q git python3 python3-pip curl wget dpkg-dev desktop-file-utils >/dev/null
+  sudo apt-get install -y -q git python3 python3-pip curl wget dpkg-dev desktop-file-utils ninja-build >/dev/null
   if [[ ! -d "$BT/.git" ]]; then
     run_logged clone-build-tools git clone --depth 1 --branch "$TAG" https://github.com/ONLYOFFICE/build_tools.git "$BT"
   fi
@@ -112,6 +112,9 @@ step_build() {
   if [[ -x "$v8d/depot_tools/ensure_bootstrap" && ! -f "$v8d/depot_tools/python3_bin_reldir.txt" ]]; then
     run_logged depot-tools-bootstrap bash -c "cd '$v8d/depot_tools' && ./ensure_bootstrap"
   fi
+  # depot_tools/ninja.py không còn kèm ninja -> dùng ninja của hệ thống (nằm sau depot_tools trong PATH)
+  command -v ninja >/dev/null || sudo apt-get install -y -q ninja-build
+  export GCLIENT_SUPPRESS_GIT_VERSION_WARNING=1
   run_logged make "$PY" ./make.py
 }
 
