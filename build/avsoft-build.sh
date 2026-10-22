@@ -114,6 +114,15 @@ step_build() {
   fi
   # depot_tools/ninja.py không còn kèm ninja -> dùng ninja của hệ thống (nằm sau depot_tools trong PATH)
   command -v ninja >/dev/null || sudo apt-get install -y -q ninja-build
+  # build_tools đặt LD_LIBRARY_PATH = thư viện sysroot Ubuntu 16 (libstdc++ cũ) -> ninja của Ubuntu 24
+  # báo "GLIBCXX_3.4.32 not found". Bọc ninja: tự nạp thư viện hệ thống, các lệnh con vẫn giữ môi trường sysroot.
+  mkdir -p "$WORK/bin"
+  cat > "$WORK/bin/ninja" <<'NINJA'
+#!/bin/sh
+exec /lib64/ld-linux-x86-64.so.2 --library-path /lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu /usr/bin/ninja "$@"
+NINJA
+  chmod +x "$WORK/bin/ninja"
+  export PATH="$WORK/bin:$PATH"
   export GCLIENT_SUPPRESS_GIT_VERSION_WARNING=1
   run_logged make "$PY" ./make.py
 }
