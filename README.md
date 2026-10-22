@@ -36,12 +36,17 @@ avsoft-branding/
 
 ## 2. Biên dịch (một lệnh)
 
+Thư mục dự án nằm trên ổ 1 TB (`F:\IT\Bawaco\Office`, trong WSL là `/mnt/f/IT/Bawaco/Office`).
+Mã nguồn và quá trình biên dịch phải đặt **trong ổ Linux** (`~`), chỉ dùng ổ F để chép vào/ra:
+
 ```bash
 cd ~
-# chép thư mục avsoft-branding vào ~ (hoặc git clone kho của công ty)
+cp /mnt/f/IT/Bawaco/Office/avsoft-branding.zip . && unzip -o avsoft-branding.zip
 cd avsoft-branding
 bash build/avsoft-build.sh
 ```
+
+Biên dịch xong, gói `.deb` và bản `.tar.gz` được tự chép về `F:\IT\Bawaco\Office\dist\`.
 
 Các bước (chạy riêng được: `fetch`, `brand`, `build`, `package`):
 

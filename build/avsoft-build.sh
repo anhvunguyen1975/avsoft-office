@@ -120,6 +120,12 @@ EOF
   install -m755 "$HERE/build/linux/postrm" "$deb/DEBIAN/postrm"
   run_logged dpkg-deb dpkg-deb --build --root-owner-group "$deb"
   tar -C "$deb$opt/.." -czf "$WORK/dist/${PKG}_${VERSION}_linux_x64_portable.tar.gz" "$(basename "$opt")"
+  # Máy Windows + WSL2: tự chép kết quả sang ổ F (thư mục dự án) nếu có
+  local proj="${PROJECT_DIR:-/mnt/f/IT/Bawaco/Office}"
+  if [[ -d "$proj" ]]; then
+    mkdir -p "$proj/dist" && cp -f "$deb.deb" "$WORK/dist/${PKG}_${VERSION}_linux_x64_portable.tar.gz" "$proj/dist/" \
+      && echo "   Đã chép kết quả sang $proj/dist"
+  fi
   say "XONG"
   echo "   Gói cài:      $deb.deb"
   echo "   Bản chạy liền: $WORK/dist/${PKG}_${VERSION}_linux_x64_portable.tar.gz"
