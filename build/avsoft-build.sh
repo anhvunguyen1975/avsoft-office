@@ -97,6 +97,15 @@ step_build() {
   # cipd_client_version.digests ("Platform linux-amd64 is not supported..."). Đặt đường dẫn tuyệt đối.
   local v8d="$WORK/core/Common/3dParty/v8_89"
   export DEPOT_TOOLS_DIR="$v8d/depot_tools"
+  export DEPOT_TOOLS_UPDATE=0     # không tự cập nhật depot_tools giữa chừng (giữ các chỉnh sửa bên dưới)
+  # build_tools ghim Python 3.8 cho depot_tools trên Linux, nhưng depot_tools hiện tại cần >= 3.9
+  # (fetch.py: argparse.BooleanOptionalAction). Dùng bản 3.11.8 mà chính ONLYOFFICE ghim cho Windows.
+  local py_old="version:2@3.8.10.chromium.23" py_new="version:2@3.11.8.chromium.35"
+  sed -i "s/$py_old/$py_new/" "$BT/scripts/core_common/modules/v8_89.py"
+  if [[ -f "$v8d/depot_tools/bootstrap/manifest.txt" ]] && grep -q "$py_old" "$v8d/depot_tools/bootstrap/manifest.txt"; then
+    sed -i "s/$py_old/$py_new/" "$v8d/depot_tools/bootstrap/manifest.txt"
+    rm -rf "$v8d/depot_tools/python3_bin_reldir.txt" "$v8d"/depot_tools/bootstrap-2@3.8.10*
+  fi
   if [[ -d "$v8d" && ! -d "$v8d/v8" ]]; then
     rm -rf "$v8d/.gclient" "$v8d/.gclient_entries" "$v8d/.cipd"   # dọn lần tải V8 hỏng trước đó
   fi
