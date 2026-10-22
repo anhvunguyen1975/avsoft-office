@@ -21,6 +21,8 @@ LOGS="$WORK/logs"
 STEP="${1:-all}"
 jq_() { python3 -c "import json,sys;print(json.load(open('$HERE/brand.json'))['$1'])"; }
 TAG="$(jq_ upstream_tag)"
+# build_tools: tiền tố "tags/" để checkout đúng tag và bỏ qua "git pull" (tag không phải nhánh)
+BRANCH="tags/$TAG"
 VERSION="$(jq_ upstream_version)"
 PRODUCT="$(jq_ product_name)"
 PKG="$(jq_ internal_name)"
@@ -67,7 +69,7 @@ step_fetch() {
   [[ -d ./qt_build ]] || run_logged qt ./python3/bin/python3 ./qt_binary_fetch.py all
   [[ -d ./sysroot/ubuntu16-amd64-sysroot ]] || (cd sysroot && run_logged sysroot ../python3/bin/python3 ./fetch.py all)
   cd "$BT"
-  run_logged configure-fetch "$PY" ./configure.py --branch "$TAG" --module desktop --sysroot 1 --update 1 --qt-dir "$QT_DIR"
+  run_logged configure-fetch "$PY" ./configure.py --branch "$BRANCH" --module desktop --sysroot 1 --update 1 --qt-dir "$QT_DIR"
   # chỉ tải/cập nhật mã nguồn các kho (chưa biên dịch) để còn áp thương hiệu trước khi biên dịch
   run_logged fetch-sources "$PY" - <<'PYEOF'
 import sys
@@ -88,7 +90,7 @@ step_brand() {
 step_build() {
   [[ -x "$PY" ]] || die "Chưa chuẩn bị công cụ — chạy bước fetch trước."
   cd "$BT"
-  run_logged configure-build "$PY" ./configure.py --branch "$TAG" --module desktop --sysroot 1 \
+  run_logged configure-build "$PY" ./configure.py --branch "$BRANCH" --module desktop --sysroot 1 \
       --update 0 --clean "${CLEAN:-1}" --qt-dir "$QT_DIR"
   run_logged make "$PY" ./make.py
 }
