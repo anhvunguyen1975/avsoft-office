@@ -92,6 +92,17 @@ step_build() {
   cd "$BT"
   run_logged configure-build "$PY" ./configure.py --branch "$BRANCH" --module desktop --sysroot 1 \
       --update 0 --clean "${CLEAN:-1}" --qt-dir "$QT_DIR"
+  # V8 (core/Common/3dParty/v8_89): build_tools gọi "./depot_tools/fetch" bằng đường dẫn tương đối;
+  # depot_tools bản mới lấy DEPOT_TOOLS_DIR tương đối rồi cd vào thư mục con -> cipd không thấy
+  # cipd_client_version.digests ("Platform linux-amd64 is not supported..."). Đặt đường dẫn tuyệt đối.
+  local v8d="$WORK/core/Common/3dParty/v8_89"
+  export DEPOT_TOOLS_DIR="$v8d/depot_tools"
+  if [[ -d "$v8d" && ! -d "$v8d/v8" ]]; then
+    rm -rf "$v8d/.gclient" "$v8d/.gclient_entries" "$v8d/.cipd"   # dọn lần tải V8 hỏng trước đó
+  fi
+  if [[ -x "$v8d/depot_tools/ensure_bootstrap" && ! -f "$v8d/depot_tools/python3_bin_reldir.txt" ]]; then
+    run_logged depot-tools-bootstrap bash -c "cd '$v8d/depot_tools' && ./ensure_bootstrap"
+  fi
   run_logged make "$PY" ./make.py
 }
 
