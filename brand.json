@@ -1,0 +1,17 @@
+{
+  "product_name": "AV-SOFT Office",
+  "brand": "AV-SOFT",
+  "publisher": "AV-SOFT (BAWACO)",
+  "internal_name": "avsoft-office",
+  "upstream_name": "ONLYOFFICE Desktop Editors",
+  "upstream_tag": "v9.4.0.131",
+  "upstream_version": "9.4.0",
+  "modified_date": "2026-10-22",
+  "default_locale": "vi-VN",
+  "site_url": "https://github.com/avsoft-office/avsoft-office",
+  "source_url": "https://github.com/avsoft-office/avsoft-office",
+  "license_url": "https://github.com/avsoft-office/avsoft-office/blob/main/LICENSE",
+  "welcome_vi": "Chào mừng đến với AV-SOFT Office!",
+  "welcome_descr_vi": "Bộ ứng dụng văn phòng AV-SOFT: soạn văn bản, bảng tính, trình chiếu và xử lý PDF — làm việc được cả khi không có mạng.",
+  "welcome_en": "Welcome to AV-SOFT Office!"
+}

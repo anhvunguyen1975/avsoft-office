@@ -1,0 +1,52 @@
+/*
+ * Modified by {publisher} on {modified_date}: thay tên, định danh và ngôn ngữ mặc định
+ * cho bản phân phối "{product_name}" (dựa trên {upstream_name} {upstream_version}).
+ * Bản sửa đổi được phát hành theo GNU AGPL v3 kèm các điều khoản bổ sung trong tệp LICENSE.
+ */
+{original_header}
+#ifndef DEFINES_P_H
+#define DEFINES_P_H
+
+/* ---- Tên hiển thị ---- */
+#undef  APP_TITLE
+#define APP_TITLE               "{product_name}"
+#undef  WINDOW_NAME
+#define WINDOW_NAME             "{product_name}"
+#undef  APP_SIMPLE_WINDOW_TITLE
+#define APP_SIMPLE_WINDOW_TITLE "{product_name}"
+#define ABOUT_PAGE_APP_NAME     "{product_name}"
+#undef  URL_SITE
+#define URL_SITE                "{site_url}"
+
+/* ---- Định danh riêng: cài và chạy song song được với ONLYOFFICE gốc ---- */
+#ifdef __linux
+# undef  APP_DATA_PATH
+# define APP_DATA_PATH     "/avsoft/office"
+# undef  REG_GROUP_KEY
+# define REG_GROUP_KEY     "avsoft"
+# undef  APP_MUTEX_NAME
+# define APP_MUTEX_NAME    "avsoft:office"
+# undef  DESKTOP_FILE_NAME
+# define DESKTOP_FILE_NAME "{internal_name}"
+#else
+# undef  APP_DATA_PATH
+# define APP_DATA_PATH     "/AVSOFT/Office"
+# undef  APP_REG_NAME
+# define APP_REG_NAME      "AVSOFT"
+# undef  REG_GROUP_KEY
+# define REG_GROUP_KEY     "AVSOFT"
+# undef  REG_UNINST_KEY
+# define REG_UNINST_KEY    "{product_name}"
+# undef  APP_MUTEX_NAME
+# define APP_MUTEX_NAME    "AVSOFT_OFFICE"
+#endif
+#undef  APP_USER_MODEL_ID
+#define APP_USER_MODEL_ID  "AVSOFT.Office.1"
+
+/* ---- Ngôn ngữ mặc định: tiếng Việt (người dùng vẫn đổi được trong Cài đặt) ---- */
+#undef  APP_DEFAULT_LOCALE
+#define APP_DEFAULT_LOCALE "{default_locale}"
+#undef  APP_DEFAULT_SYSTEM_LOCALE
+#define APP_DEFAULT_SYSTEM_LOCALE 0
+
+#endif // DEFINES_P_H
