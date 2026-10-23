@@ -24,6 +24,21 @@ HERE = Path(__file__).resolve().parent.parent          # gốc kho avsoft-brandi
 OVERLAY = HERE / "overlay"
 REPOS = ("desktop-apps", "web-apps", "desktop-sdk", "core", "sdkjs", "document-templates")
 
+
+# Các chuỗi trang khởi động còn thiếu trong vi.js của ONLYOFFICE 9.4
+LOGINPAGE_VI_EXTRA = """    menuFilePin: 'Ghim',
+    menuFileUnpin: 'Bỏ ghim',
+    actPreviewTemplates: 'Mẫu',
+    actClouds: 'Đám mây',
+    actHome: 'Trang chủ',
+    settOptThemeWhite: 'Sáng hiện đại',
+    settOptThemeNight: 'Tối hiện đại',
+    tplErrorTLS: 'Windows XP không hỗ trợ giao thức TLS 1.1 và TLS 1.2 hiện tại, nên không thể dùng Mẫu trên đám mây trên hệ điều hành này.',
+    tplFree: 'Miễn phí',
+    tplUseTemplate: 'Dùng mẫu này',
+    tplFileSize: 'Dung lượng tệp',
+    tplFileType: 'Loại tệp',"""
+
 warnings: list[str] = []
 
 
@@ -190,6 +205,8 @@ def fill_vietnamese(work: Path):
     2) dùng từ điển build/locale/vi-extra.json (câu tiếng Anh -> tiếng Việt)."""
     extra_path = HERE / "build" / "locale" / "vi-extra.json"
     extra = json.loads(extra_path.read_text(encoding="utf-8")) if extra_path.exists() else {}
+    fix_path = HERE / "build" / "locale" / "vi-fix.json"   # sửa các chuỗi "dịch" y nguyên tiếng Anh
+    fix = json.loads(fix_path.read_text(encoding="utf-8")) if fix_path.exists() else {}
     repo = work / "web-apps"
     pairs = []
     for en in sorted(repo.glob("apps/*/*/locale/en.json")):
@@ -203,13 +220,19 @@ def fill_vietnamese(work: Path):
     known = {}
     for _, E, V in pairs:
         for k, v in V.items():
-            if isinstance(v, str) and v and isinstance(E.get(k), str):
+            if isinstance(v, str) and v and isinstance(E.get(k), str) and v != E[k]:
                 known.setdefault(E[k], v)
     total = still = 0
     for vi, E, V in pairs:
         n = 0
         for k, en_text in E.items():
-            if not isinstance(en_text, str) or V.get(k):
+            if not isinstance(en_text, str):
+                continue
+            if V.get(k) == en_text and en_text in fix:
+                V[k] = fix[en_text]
+                n += 1
+                continue
+            if V.get(k):
                 continue
             t = known.get(en_text) or extra.get(en_text)
             if t:
@@ -244,6 +267,7 @@ def main():
 
     # --- trang khởi động: lời chào, tiêu đề, thông báo pháp lý trong "Về ứng dụng"
     patch(work, "desktop-apps", "common/loginpage/locale/vi.js", [
+        ("l10n.vi = {", "l10n.vi = {\n" + LOGINPAGE_VI_EXTRA),
         ("welWelcome: 'Chào mừng đến với ONLYOFFICE Editors cho máy tính!'", f"welWelcome: '{brand['welcome_vi']}'"),
         ("welDescr: 'Làm việc với các tài liệu khi không kết nối mạng hay kết nối bộ công cụ với đám mây của bạn: ONLYOFFICE, ownCloud, Nextcloud.'",
          f"welDescr: '{brand['welcome_descr_vi']}'"),
