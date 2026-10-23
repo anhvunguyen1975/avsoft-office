@@ -14,13 +14,15 @@ from __future__ import annotations
 import argparse
 import json
 import shutil
+import re
 import subprocess
 import sys
+import zipfile
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent.parent          # gốc kho avsoft-branding
 OVERLAY = HERE / "overlay"
-REPOS = ("desktop-apps", "web-apps", "desktop-sdk", "core", "sdkjs")
+REPOS = ("desktop-apps", "web-apps", "desktop-sdk", "core", "sdkjs", "document-templates")
 
 warnings: list[str] = []
 
@@ -121,6 +123,106 @@ def legal_block(brand: dict) -> str:
     )
 
 
+# ---------------------------------------------------------------- trợ giúp / liên kết
+EDITORS = ("documenteditor", "spreadsheeteditor", "presentationeditor", "pdfeditor", "visioeditor")
+
+
+def disable_bundled_help(work: Path):
+    """Không đóng gói tài liệu Trợ giúp gốc của ONLYOFFICE (tiếng Anh, ảnh có logo ONLYOFFICE)."""
+    for ed in EDITORS:
+        rel = f"build/{ed}.json"
+        path = work / "web-apps" / rel
+        if not path.exists():
+            warnings.append(f"Không thấy web-apps/{rel}")
+            continue
+        restore(work / "web-apps", rel)
+        d = json.loads(path.read_text(encoding="utf-8"))
+        try:
+            d["main"]["copy"]["help"] = []
+        except KeyError:
+            warnings.append(f"web-apps/{rel}: không có main.copy.help")
+            continue
+        path.write_text(json.dumps(d, ensure_ascii=False, indent=4) + "\n", encoding="utf-8")
+    log("đã bỏ tài liệu Trợ giúp gốc khỏi gói (web-apps/build/*.json)")
+
+
+# ---------------------------------------------------------------- mẫu văn bản mới theo NĐ 30
+def nd30_template(work: Path, brand: dict):
+    """Văn bản mới (vi-VN): Times New Roman 14, cách đoạn sau 6pt, dòng 1,15; lề A4 theo NĐ 30/2020
+    (trên 20 mm, dưới 20 mm, trái 30 mm, phải 15 mm)."""
+    repo = work / "document-templates"
+    rel = "new/vi-VN/new.docx"
+    path = repo / rel
+    if not path.exists():
+        warnings.append(f"Không thấy document-templates/{rel}")
+        return
+    restore(repo, rel)
+    src = zipfile.ZipFile(path)
+    items = {i.filename: src.read(i.filename) for i in src.infolist()}
+    infos = src.infolist()
+    src.close()
+    st = items["word/styles.xml"].decode("utf-8")
+    rpr = ('<w:rPrDefault><w:rPr><w:rFonts w:ascii="Times New Roman" w:eastAsia="Times New Roman" '
+           'w:hAnsi="Times New Roman" w:cs="Times New Roman"/><w:sz w:val="28"/>'
+           '<w:lang w:val="vi-VN" w:bidi="ar-SA" w:eastAsia="en-US"/><w:szCs w:val="28"/></w:rPr></w:rPrDefault>')
+    ppr = '<w:pPrDefault><w:pPr><w:spacing w:before="0" w:after="120" w:line="276" w:lineRule="auto"/></w:pPr></w:pPrDefault>'
+    st2, n1 = re.subn(r"<w:rPrDefault>.*?</w:rPrDefault>", rpr, st, count=1, flags=re.S)
+    st2, n2 = re.subn(r"<w:pPrDefault>.*?</w:pPrDefault>", ppr, st2, count=1, flags=re.S)
+    doc = items["word/document.xml"].decode("utf-8")
+    doc2, n3 = re.subn(r"<w:pgMar [^>]*/>",
+                       '<w:pgMar w:top="1134" w:right="850" w:bottom="1134" w:left="1701" w:gutter="0" w:header="709" w:footer="709"/>',
+                       doc, count=1)
+    if not (n1 and n2 and n3):
+        warnings.append("Mẫu NĐ 30: cấu trúc new.docx đã khác, bỏ qua")
+        return
+    items["word/styles.xml"] = st2.encode("utf-8")
+    items["word/document.xml"] = doc2.encode("utf-8")
+    with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as z:
+        for i in infos:
+            z.writestr(i, items[i.filename])
+    log("đã đặt mẫu văn bản mới theo NĐ 30 (Times New Roman 14, lề 20-20-30-15 mm)")
+
+
+# ---------------------------------------------------------------- bổ sung bản dịch tiếng Việt
+def fill_vietnamese(work: Path):
+    """Điền các chuỗi còn thiếu trong apps/*/*/locale/vi.json:
+    1) dùng lại bản dịch sẵn có của cùng câu tiếng Anh ở ứng dụng khác;
+    2) dùng từ điển build/locale/vi-extra.json (câu tiếng Anh -> tiếng Việt)."""
+    extra_path = HERE / "build" / "locale" / "vi-extra.json"
+    extra = json.loads(extra_path.read_text(encoding="utf-8")) if extra_path.exists() else {}
+    repo = work / "web-apps"
+    pairs = []
+    for en in sorted(repo.glob("apps/*/*/locale/en.json")):
+        vi = en.with_name("vi.json")
+        rel = str(vi.relative_to(repo))
+        if vi.exists():
+            restore(repo, rel)
+        E = json.loads(en.read_text(encoding="utf-8"))
+        V = json.loads(vi.read_text(encoding="utf-8")) if vi.exists() else {}
+        pairs.append((vi, E, V))
+    known = {}
+    for _, E, V in pairs:
+        for k, v in V.items():
+            if isinstance(v, str) and v and isinstance(E.get(k), str):
+                known.setdefault(E[k], v)
+    total = still = 0
+    for vi, E, V in pairs:
+        n = 0
+        for k, en_text in E.items():
+            if not isinstance(en_text, str) or V.get(k):
+                continue
+            t = known.get(en_text) or extra.get(en_text)
+            if t:
+                V[k] = t
+                n += 1
+            else:
+                still += 1
+        if n:
+            vi.write_text(json.dumps(V, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+            total += n
+    log(f"đã bổ sung {total} chuỗi tiếng Việt (còn {still} chuỗi hiển thị tiếng Anh)")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--work", required=True, help="thư mục chứa build_tools và các kho ONLYOFFICE")
@@ -156,6 +258,21 @@ def main():
         ('<div class="ver-copyright about-field">${_opts.rights}</div>',
          '<div class="ver-copyright about-field">${_opts.rights}</div>' + legal_block(brand)),
     ], brand, "c", critical=True)
+
+    # --- liên kết hỗ trợ / góp ý trỏ về AV-SOFT
+    patch(work, "desktop-apps", "common/loginpage/src/panelrecent.js", [
+        ('href="https://helpcenter.onlyoffice.com/"', f'href="{brand["help_url"]}"'),
+    ], brand, "c")
+    patch(work, "web-apps", "apps/api/documents/index.html.desktop", [
+        ('goback: { url: "onlyoffice.com" }', f'goback: {{ url: "{brand["site_url"]}" }}'),
+        ('url: "https://helpdesk.onlyoffice.com/?desktop=true"', f'url: "{brand["feedback_url"]}"'),
+        ('                        , uiTheme: urlParams["uitheme"]',
+         '                        , help: false\n                        , uiTheme: urlParams["uitheme"]'),
+    ], brand, "html")
+    disable_bundled_help(work)
+    if brand.get("nd30_template"):
+        nd30_template(work, brand)
+    fill_vietnamese(work)
 
     # --- gói Linux (dùng khi đóng gói bằng hệ thống của ONLYOFFICE)
     patch(work, "desktop-apps", "package/common/linux/defines.m4", [

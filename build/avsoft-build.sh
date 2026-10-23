@@ -124,6 +124,11 @@ NINJA
   chmod +x "$WORK/bin/ninja"
   export PATH="$WORK/bin:$PATH"
   export GCLIENT_SUPPRESS_GIT_VERSION_WARNING=1
+  # web-apps (Gruntfile.js): thay các liên kết/tên mặc định của ONLYOFFICE trong trình soạn thảo
+  # (giữ nguyên PUBLISHER_NAME = Ascensio System SIA để ghi công nhà phát triển gốc)
+  export APP_TITLE_TEXT="$PRODUCT" COMPANY_NAME="$(jq_ brand)"
+  export PUBLISHER_URL="$(jq_ site_url)" SUPPORT_URL="$(jq_ feedback_url)" SUGGEST_URL="$(jq_ feedback_url)"
+  export HELP_URL="$(jq_ help_url)" HELP_CENTER_WEB_EDITORS="$(jq_ help_url)"
   run_logged make "$PY" ./make.py
 }
 

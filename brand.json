@@ -13,5 +13,8 @@
   "license_url": "https://github.com/anhvunguyen1975/avsoft-office/blob/main/LICENSE",
   "welcome_vi": "Chào mừng đến với AV-SOFT Office!",
   "welcome_descr_vi": "Bộ ứng dụng văn phòng AV-SOFT: soạn văn bản, bảng tính, trình chiếu và xử lý PDF — làm việc được cả khi không có mạng.",
-  "welcome_en": "Welcome to AV-SOFT Office!"
+  "welcome_en": "Welcome to AV-SOFT Office!",
+  "help_url": "https://github.com/anhvunguyen1975/avsoft-office#readme",
+  "feedback_url": "https://github.com/anhvunguyen1975/avsoft-office/issues",
+  "nd30_template": true
 }
