@@ -99,6 +99,32 @@ function Ensure-Perl {
     Warn "Thiếu Perl cho Windows (cài: winget install -e --id StrawberryPerl.StrawberryPerl)"; return $false
 }
 
+function Ensure-Node {
+    # web-apps dùng grunt; npm >= 11 chặn script cài đặt (gifsicle, jpegtran-bin, optipng-bin) -> dùng npm 10
+    $env:Path = "$env:APPDATA\npm;$env:Path"
+    $npmv = (& npm --version 2>$null)
+    if (-not $npmv) { Warn "Thiếu Node.js/npm"; return $false }
+    if ([int]($npmv.Split(".")[0]) -gt 10) {
+        Write-Host "   npm $npmv -> cài npm 10 (bản mới chặn script cài đặt mà web-apps cần)"
+        cmd /c "npm install -g npm@10 2>&1" | Out-Host
+        $npmv = (& npm --version 2>$null)
+    }
+    if (-not (Get-Command grunt -ErrorAction SilentlyContinue)) {
+        Write-Host "   cài grunt-cli"
+        cmd /c "npm install -g grunt-cli 2>&1" | Out-Host
+    }
+    $g = Get-Command grunt -ErrorAction SilentlyContinue
+    Write-Host "   npm    : $npmv · grunt: $(if ($g) { $g.Source } else { 'THIẾU' })"
+    if ([int]($npmv.Split(".")[0]) -gt 10 -or -not $g) { Warn "Cần npm 10 và grunt-cli (npm install -g npm@10 grunt-cli)"; return $false }
+    # node_modules đã cài bằng npm mới (thiếu chương trình nén ảnh) -> xóa để cài lại
+    foreach ($nm in "$Work\web-apps\build\node_modules", "$Work\sdkjs\build\node_modules") {
+        if ((Test-Path "$nm\gifsicle") -and -not (Test-Path "$nm\gifsicle\vendor")) {
+            Write-Host "   xóa $nm (cài thiếu) để cài lại"; cmd /c "rmdir /s /q `"$nm`""
+        }
+    }
+    return $true
+}
+
 function Step-Check {
     Say "Kiểm tra máy và công cụ"
     $ok = $true
@@ -184,6 +210,7 @@ function Step-Build {
     }
     if (-not (Ensure-Cmake)) { Die "Cần CMake 3.x để biên dịch (xem dòng [!] ở trên)." }
     if (-not (Ensure-Perl)) { Die "Cần Perl để biên dịch OpenSSL (xem dòng [!] ở trên)." }
+    if (-not (Ensure-Node)) { Die "Cần npm 10 và grunt-cli (xem dòng [!] ở trên)." }
     # OpenSSL lỗi âm thầm (thiếu Perl) vẫn để lại thư mục build rỗng -> xóa để build lại
     $ossl = "$Work\core\Common\3dParty\openssl\build\win_64"
     if ((Test-Path $ossl) -and -not (Test-Path "$ossl\include\openssl\sha.h")) {
