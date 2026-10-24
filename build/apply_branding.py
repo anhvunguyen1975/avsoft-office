@@ -82,7 +82,10 @@ def patch(work: Path, repo: str, rel: str, pairs: list[tuple[str, str]], brand: 
             warnings.append(msg)
             continue
         text = text.replace(old, new)
-    path.write_text(notice(brand, style) + text if style != "html" else _html_notice(text, brand), encoding="utf-8")
+    bom = text.startswith("\ufeff")          # giữ BOM ở đầu tệp (Inno Setup báo lỗi nếu BOM nằm giữa tệp)
+    text = text.lstrip("\ufeff")
+    out = notice(brand, style) + text if style != "html" else _html_notice(text, brand)
+    path.write_text(("\ufeff" if bom else "") + out, encoding="utf-8")
     log(f"đã sửa {repo}/{rel}")
 
 
