@@ -165,6 +165,16 @@ function Step-Build {
         Remove-Item -Force -Recurse -ErrorAction SilentlyContinue "$v8d\.gclient", "$v8d\.gclient_entries", "$v8d\.cipd"
     }
     if (-not (Ensure-Cmake)) { Die "Cần CMake để biên dịch." }
+    # build_tools gọi trực tiếp "./make.py" cho brotli/harfbuzz: trên Windows sẽ mở tệp bằng trình soạn thảo
+    # (theo liên kết tệp .py) thay vì chạy. Sửa thành "python ./make.py".
+    foreach ($m in "oo_brotli.py", "harfbuzz.py") {
+        $f = "$BT\scripts\core_common\modules\$m"
+        if (Test-Path $f) {
+            $t = [IO.File]::ReadAllText($f)
+            $t2 = $t.Replace(', "./make.py")', ', "python", ["./make.py"])')
+            if ($t2 -ne $t) { [IO.File]::WriteAllText($f, $t2); Write-Host "   đã sửa $m (chạy make.py bằng python)" }
+        }
+    }
     $cleanOpt = if ($Clean) { "1" } else { "0" }
     Run "configure-build" (Configure "0" $cleanOpt) $BT
     Run "make" "`"$PY`" make.py" $BT
