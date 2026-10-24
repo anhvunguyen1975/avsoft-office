@@ -91,6 +91,14 @@ function Ensure-Cmake {
     return $false
 }
 
+function Ensure-Perl {
+    # OpenSSL (Configure) cần Perl cho Windows; Perl đi kèm Git không dùng được
+    foreach ($d in "C:\Strawberry\perl\bin", "C:\Strawberry\c\bin") { if (Test-Path $d) { $env:Path = "$d;$env:Path" } }
+    $c = Get-Command perl -ErrorAction SilentlyContinue
+    if ($c -and $c.Source -notlike "*\Git\*") { Write-Host "   Perl   : $($c.Source)"; return $true }
+    Warn "Thiếu Perl cho Windows (cài: winget install -e --id StrawberryPerl.StrawberryPerl)"; return $false
+}
+
 function Step-Check {
     Say "Kiểm tra máy và công cụ"
     $ok = $true
@@ -105,6 +113,7 @@ function Step-Check {
     if (Test-Path "$QtDir\msvc2019_64\bin\qmake.exe") { Write-Host "   Qt     : $QtDir\msvc2019_64" }
     else { Warn "Không thấy $QtDir\msvc2019_64\bin\qmake.exe (tạo liên kết: mklink /J ...\msvc2019_64 ...\msvc2017_64)"; $ok = $false }
     if (-not (Ensure-Cmake)) { $ok = $false }
+    if (-not (Ensure-Perl)) { $ok = $false }
     $iscc = Find-Iscc
     if ($iscc) { Write-Host "   Inno   : $iscc" } else { Warn "Không thấy Inno Setup 6 (winget install -e --id JRSoftware.InnoSetup)"; $ok = $false }
     $dbg = "${env:ProgramFiles(x86)}\Windows Kits\10\Debuggers\x64\dbghelp.dll"
@@ -174,6 +183,12 @@ function Step-Build {
         Remove-Item -Force -Recurse -ErrorAction SilentlyContinue "$v8d\.gclient", "$v8d\.gclient_entries", "$v8d\.cipd"
     }
     if (-not (Ensure-Cmake)) { Die "Cần CMake 3.x để biên dịch (xem dòng [!] ở trên)." }
+    if (-not (Ensure-Perl)) { Die "Cần Perl để biên dịch OpenSSL (xem dòng [!] ở trên)." }
+    # OpenSSL lỗi âm thầm (thiếu Perl) vẫn để lại thư mục build rỗng -> xóa để build lại
+    $ossl = "$Work\core\Common\3dParty\openssl\build\win_64"
+    if ((Test-Path $ossl) -and -not (Test-Path "$ossl\include\openssl\sha.h")) {
+        Remove-Item -Recurse -Force $ossl; Write-Host "   đã xóa bản OpenSSL build dở để build lại"
+    }
     # xóa cấu hình CMake dở dang của lần chạy lỗi trước (heif/x265, libde265, libheif)
     Get-ChildItem "$Work\core\Common\3dParty\heif\*\build" -Recurse -Filter CMakeCache.txt -ErrorAction SilentlyContinue |
         ForEach-Object { Remove-Item -Force $_.FullName; Remove-Item -Recurse -Force "$($_.DirectoryName)\CMakeFiles" -ErrorAction SilentlyContinue }
