@@ -321,6 +321,13 @@ def main():
         ('#define ASCC_REG_REGISTERED_APP_NAME    "ONLYOFFICE Editors"', f'#define ASCC_REG_REGISTERED_APP_NAME    "{brand["product_name"]}"'),
         ('#define ASSOC_PROG_ID                   "ASC.Editors"', '#define ASSOC_PROG_ID                   "AVSOFT.Office"'),
         ('#define ASSOC_APP_FRIENDLY_NAME         "ONLYOFFICE Editors"', f'#define ASSOC_APP_FRIENDLY_NAME         "{brand["product_name"]}"'),
+        # Bản quyền gốc thuộc Ascensio System SIA; AV-SOFT chỉ là bên sửa đổi (AGPL v3)
+        ('#define sAppCopyright                   str("© " + sAppPublisher + " " + GetDateTimeString("yyyy",,) + ". All rights reserved.")',
+         '#define sAppCopyright                   str("© Ascensio System SIA. Modified by " + sAppPublisher + " " + GetDateTimeString("yyyy",,) + ". AGPL v3.")'),
+    ], brand, "iss")
+    # Bộ cài: dùng các tệp ngôn ngữ Inno Setup kèm theo (gồm bản tiếng Việt không chính thức)
+    patch(work, "desktop-apps", "package/inno/common.iss", [
+        ("MessagesFile: compiler:Languages\\", "MessagesFile: avsoft-isl\\"),
     ], brand, "iss")
 
     # --- xuất bản vá để công bố mã nguồn

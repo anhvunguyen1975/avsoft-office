@@ -17,5 +17,6 @@ Bản vá dạng `git diff` được sinh tự động vào `<WORK>/avsoft-patch
 - Mã nguồn: **GNU AGPL v3** kèm các điều khoản bổ sung của ONLYOFFICE — xem tệp `LICENSE`.
 - Nội dung không phải mã (hình minh hoạ, bộ biểu tượng, tài liệu) của ONLYOFFICE: **CC BY-SA 4.0**.
 - Biểu tượng và logo AV-SOFT trong `overlay/` và `assets/`: thuộc AV-SOFT.
+- Tệp ngôn ngữ bộ cài (`overlay/desktop-apps/package/inno/avsoft-isl/*.isl`): từ Inno Setup (jrsoftware/issrc), giấy phép Inno Setup.
 - Font Be Vietnam Pro (dùng để dựng chữ trong hình): SIL Open Font License 1.1 — `assets/source/fonts/OFL.txt`.
 - Phần mềm **không** sử dụng nhãn hiệu, logo ONLYOFFICE; tên "ONLYOFFICE" chỉ xuất hiện để ghi nhận nhà phát triển gốc.

@@ -85,9 +85,37 @@ Khi đưa bộ cài AV-SOFT Office cho người khác (kể cả bạn bè):
 - **Không** dùng logo/nhãn hiệu ONLYOFFICE trong sản phẩm, tài liệu quảng bá.
 - Cập nhật `source_url`, `license_url` trong `brand.json` thành địa chỉ kho GitHub thật trước khi phát hành.
 
+## 6. Bản Windows (bộ cài .exe)
+
+Biên dịch trên chính máy Windows 10/11 64-bit (≥ 80 GB trống, nên dùng ổ D:).
+
+**Cài công cụ** (PowerShell *Run as Administrator*):
+```powershell
+reg add HKLM\SYSTEM\CurrentControlSet\Control\FileSystem /v LongPathsEnabled /t REG_DWORD /d 1 /f
+winget install -e --id Git.Git
+winget install -e --id Python.Python.3.11
+winget install -e --id OpenJS.NodeJS.LTS
+winget install -e --id JRSoftware.InnoSetup
+winget install -e --id Microsoft.VisualStudio.2019.BuildTools --override "--wait --passive --norestart --installPath D:\VS2019BT --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --add Microsoft.VisualStudio.Component.Windows10SDK.19041"
+py -m pip install aqtinstall
+py -m aqt install-qt windows desktop 5.9.9 win64_msvc2017_64 -O D:\Qt
+cmd /c mklink /J D:\Qt\5.9.9\msvc2019_64 D:\Qt\5.9.9\msvc2017_64
+```
+Thêm **Debugging Tools for Windows** (cần cho V8): *Control Panel → Programs and Features →
+Windows Software Development Kit - Windows 10.0.19041 → Change → Change → đánh dấu "Debugging Tools for Windows"*.
+
+**Biên dịch** (PowerShell Admin):
+```powershell
+cd D:\ ; git clone https://github.com/anhvunguyen1975/avsoft-office.git ; cd avsoft-office
+powershell -ExecutionPolicy Bypass -File build\windows\avsoft-build-win.ps1 -Step check
+powershell -ExecutionPolicy Bypass -File build\windows\avsoft-build-win.ps1
+```
+Kết quả: `D:\avsoft-win\dist\avsoft-office-9.4.0-x64-setup.exe` (tự chép sang `F:\IT\Bawaco\Office\dist\` nếu có ổ F).
+Các bước chạy riêng: `-Step fetch | brand | build | package`; nhật ký ở `D:\avsoft-win\logs\`.
+
 ## Trạng thái
 
 - [x] Kho thương hiệu, hình ảnh, script biên dịch Linux, đóng gói .deb
-- [ ] Biên dịch thử lần đầu trên máy thật
-- [ ] Bộ cài Windows (Inno Setup) — đã chuẩn bị `defines.iss` và ảnh, chưa kiểm thử
+- [x] Biên dịch thử lần đầu trên máy thật (Linux, 23/10/2026)
+- [ ] Bộ cài Windows (Inno Setup) — script `build/windows/avsoft-build-win.ps1`, đang chạy thử
 - [ ] Plugin: mẫu NĐ 30, kiểm tra thể thức, đọc số thành chữ, OCR tiếng Việt
