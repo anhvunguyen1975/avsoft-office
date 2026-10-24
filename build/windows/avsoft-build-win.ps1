@@ -22,6 +22,7 @@ param(
 )
 
 $ErrorActionPreference = "Continue"
+chcp 65001 > $null
 try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
 $env:PYTHONIOENCODING = "utf-8"
 
@@ -143,6 +144,9 @@ function Step-Build {
     # V8 / depot_tools
     $env:DEPOT_TOOLS_DIR = "$Work\core\Common\3dParty\v8_89\depot_tools"
     $env:DEPOT_TOOLS_WIN_TOOLCHAIN = "0"
+    # V8 (build/vs_toolchain.py) chỉ tự tìm VS 2019 ở C:\Program Files (x86); chỉ đường tới bản cài trên ổ D:
+    $env:vs2019_install = Split-Path (Split-Path (Split-Path $VsPath))
+    $env:GYP_MSVS_VERSION = "2019"
     $env:GCLIENT_SUPPRESS_GIT_VERSION_WARNING = "1"
     $v8d = "$Work\core\Common\3dParty\v8_89"
     if ((Test-Path $v8d) -and -not (Test-Path "$v8d\v8")) {
