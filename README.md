@@ -96,6 +96,7 @@ winget install -e --id Git.Git
 winget install -e --id Python.Python.3.11
 winget install -e --id OpenJS.NodeJS.LTS
 winget install -e --id JRSoftware.InnoSetup
+winget install -e --id Kitware.CMake
 winget install -e --id Microsoft.VisualStudio.2019.BuildTools --override "--wait --passive --norestart --installPath D:\VS2019BT --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --add Microsoft.VisualStudio.Component.Windows10SDK.19041"
 py -m pip install aqtinstall
 py -m aqt install-qt windows desktop 5.9.9 win64_msvc2017_64 -O D:\Qt

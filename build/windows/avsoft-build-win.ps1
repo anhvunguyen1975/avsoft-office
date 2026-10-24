@@ -71,6 +71,17 @@ function Find-Iscc {
     return $null
 }
 
+function Ensure-Cmake {
+    # heif/x265 cần CMake; ưu tiên bản cài riêng, nếu không có thì dùng bản đi kèm VS 2019
+    $vsRoot = Split-Path (Split-Path (Split-Path $VsPath))
+    foreach ($d in @("$env:ProgramFiles\CMake\bin", "$vsRoot\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin")) {
+        if ((-not (Get-Command cmake -ErrorAction SilentlyContinue)) -and (Test-Path "$d\cmake.exe")) { $env:Path = "$d;$env:Path" }
+    }
+    $c = Get-Command cmake -ErrorAction SilentlyContinue
+    if ($c) { Write-Host "   CMake  : $($c.Source)"; return $true }
+    Warn "Thiếu CMake (cài: winget install -e --id Kitware.CMake)"; return $false
+}
+
 function Step-Check {
     Say "Kiểm tra máy và công cụ"
     $ok = $true
@@ -84,6 +95,7 @@ function Step-Check {
     else { Warn "Không thấy $VsPath\vcvarsall.bat (VS 2019 Build Tools chưa cài xong hoặc cài chỗ khác: dùng -VsPath)"; $ok = $false }
     if (Test-Path "$QtDir\msvc2019_64\bin\qmake.exe") { Write-Host "   Qt     : $QtDir\msvc2019_64" }
     else { Warn "Không thấy $QtDir\msvc2019_64\bin\qmake.exe (tạo liên kết: mklink /J ...\msvc2019_64 ...\msvc2017_64)"; $ok = $false }
+    if (-not (Ensure-Cmake)) { $ok = $false }
     $iscc = Find-Iscc
     if ($iscc) { Write-Host "   Inno   : $iscc" } else { Warn "Không thấy Inno Setup 6 (winget install -e --id JRSoftware.InnoSetup)"; $ok = $false }
     $dbg = "${env:ProgramFiles(x86)}\Windows Kits\10\Debuggers\x64\dbghelp.dll"
@@ -152,6 +164,7 @@ function Step-Build {
     if ((Test-Path $v8d) -and -not (Test-Path "$v8d\v8")) {
         Remove-Item -Force -Recurse -ErrorAction SilentlyContinue "$v8d\.gclient", "$v8d\.gclient_entries", "$v8d\.cipd"
     }
+    if (-not (Ensure-Cmake)) { Die "Cần CMake để biên dịch." }
     $cleanOpt = if ($Clean) { "1" } else { "0" }
     Run "configure-build" (Configure "0" $cleanOpt) $BT
     Run "make" "`"$PY`" make.py" $BT
