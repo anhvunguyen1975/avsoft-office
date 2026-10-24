@@ -43,6 +43,17 @@
 #undef  APP_USER_MODEL_ID
 #define APP_USER_MODEL_ID  "AVSOFT.Office.1"
 
+/* ---- Cổng giao tiếp nội bộ riêng: không "nói chuyện" nhầm với ONLYOFFICE gốc đang cài trên cùng máy
+ *      (dịch vụ cập nhật, mở tệp vào cửa sổ đang chạy) ---- */
+#undef  APP_PORT
+#define APP_PORT          12110
+#undef  SVC_PORT
+#define SVC_PORT          12111
+#undef  INSTANCE_SVC_PORT
+#define INSTANCE_SVC_PORT 12112
+#undef  INSTANCE_APP_PORT
+#define INSTANCE_APP_PORT 13112
+
 /* ---- Ngôn ngữ mặc định: tiếng Việt (người dùng vẫn đổi được trong Cài đặt) ---- */
 #undef  APP_DEFAULT_LOCALE
 #define APP_DEFAULT_LOCALE "{default_locale}"

@@ -244,6 +244,8 @@ function Step-Package {
     $env:INNOPATH = $iscc
     $pkg = "$Work\desktop-apps\package"
     Copy-Item -Force "$Here\LICENSE", "$Here\NOTICE.md" "$src\" -ErrorAction SilentlyContinue
+    # không phát hành dịch vụ cập nhật (trùng tên dịch vụ của ONLYOFFICE; gỡ AV-SOFT có thể xóa nhầm dịch vụ đó)
+    Remove-Item -Force "$src\updatesvc.exe" -ErrorAction SilentlyContinue
     Run "package-prepare" "powershell -NoProfile -ExecutionPolicy Bypass -File make.ps1 -Version $Version -Arch x64 -SourceDir `"$src`"" $pkg
     Run "package-inno"    "powershell -NoProfile -ExecutionPolicy Bypass -File make_inno.ps1 -Version $Version -Arch x64" $pkg
     $out = Get-ChildItem "$pkg\inno\*.exe" | Where-Object { $_.Name -notlike "vc_redist*" } | Sort-Object LastWriteTime -Descending | Select-Object -First 1

@@ -266,6 +266,12 @@ def main():
         ('#define VER_PRODUCTNAME_STR         "ONLYOFFICE\\0"', f'#define VER_PRODUCTNAME_STR         "{brand["product_name"]}\\0"'),
     ], brand, "c")
 
+    # --- tắt cập nhật tự động: máy chủ/dịch vụ cập nhật là của ONLYOFFICE (sẽ tải bản ONLYOFFICE đè lên)
+    patch(work, "desktop-apps", "win-linux/src/utils.cpp", [
+        ("bool Utils::updatesAllowed()\n{\n",
+         "bool Utils::updatesAllowed()\n{\n    return false;   // AV-SOFT: tắt cập nhật tự động của ONLYOFFICE\n"),
+    ], brand, "c", critical=True)
+
     # --- trang khởi động: lời chào, tiêu đề, thông báo pháp lý trong "Về ứng dụng"
     patch(work, "desktop-apps", "common/loginpage/locale/vi.js", [
         ("l10n.vi = {", "l10n.vi = {\n" + LOGINPAGE_VI_EXTRA),
@@ -326,6 +332,10 @@ def main():
         ('#define sAppCopyright                   str("© " + sAppPublisher + " " + GetDateTimeString("yyyy",,) + ". All rights reserved.")',
          '#define sAppCopyright                   str("© Ascensio System SIA. Modified by " + sAppPublisher + " " + GetDateTimeString("yyyy",,) + ". AGPL v3.")'),
     ], brand, "iss")
+    # Bộ cài: không cài dịch vụ cập nhật (trùng tên với dịch vụ của ONLYOFFICE), ghi CheckForUpdates=0
+    patch(work, "desktop-apps", "package/inno/_code.iss", [
+        ("if CheckCommandlineParam('/noupdates') then begin", "if True then begin { AV-SOFT: luôn tắt cập nhật }"),
+    ], brand, "iss", critical=True)
     # Bộ cài: dùng các tệp ngôn ngữ Inno Setup kèm theo (gồm bản tiếng Việt không chính thức)
     patch(work, "desktop-apps", "package/inno/common.iss", [
         ("MessagesFile: compiler:Languages\\", "MessagesFile: avsoft-isl\\"),
