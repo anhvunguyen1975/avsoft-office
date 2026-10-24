@@ -72,14 +72,23 @@ function Find-Iscc {
 }
 
 function Ensure-Cmake {
-    # heif/x265 cần CMake; ưu tiên bản cài riêng, nếu không có thì dùng bản đi kèm VS 2019
+    # heif/x265 cần CMake 3.x (CMake 4 đã bỏ hỗ trợ cmake_policy(... OLD) mà x265 dùng).
+    # Ưu tiên CMake 3.x đi kèm VS 2019, sau đó mới tới bản cài riêng.
     $vsRoot = Split-Path (Split-Path (Split-Path $VsPath))
-    foreach ($d in @("$env:ProgramFiles\CMake\bin", "$vsRoot\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin")) {
-        if ((-not (Get-Command cmake -ErrorAction SilentlyContinue)) -and (Test-Path "$d\cmake.exe")) { $env:Path = "$d;$env:Path" }
-    }
+    $vsCmake = "$vsRoot\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin"
+    if (Test-Path "$vsCmake\cmake.exe") { $env:Path = "$vsCmake;$env:Path" }
+    elseif (-not (Get-Command cmake -ErrorAction SilentlyContinue) -and (Test-Path "$env:ProgramFiles\CMake\bin\cmake.exe")) {
+        $env:Path = "$env:ProgramFiles\CMake\bin;$env:Path" }
     $c = Get-Command cmake -ErrorAction SilentlyContinue
-    if ($c) { Write-Host "   CMake  : $($c.Source)"; return $true }
-    Warn "Thiếu CMake (cài: winget install -e --id Kitware.CMake)"; return $false
+    if (-not $c) { Warn "Thiếu CMake (cài: winget install -e --id Kitware.CMake --version 3.31.8)"; return $false }
+    $ver = ((& cmake --version) | Select-Object -First 1) -replace "cmake version ", ""
+    Write-Host "   CMake  : $($c.Source) ($ver)"
+    if ([int]($ver.Split(".")[0]) -ge 4) {
+        Warn "CMake $ver quá mới cho x265 — cài thêm CMake 3.x: winget install -e --id Kitware.CMake --version 3.31.8 (hoặc thành phần 'C++ CMake tools for Windows' của VS 2019)"
+        $env:CMAKE_POLICY_VERSION_MINIMUM = "3.5"
+        return $false
+    }
+    return $true
 }
 
 function Step-Check {
@@ -164,7 +173,10 @@ function Step-Build {
     if ((Test-Path $v8d) -and -not (Test-Path "$v8d\v8")) {
         Remove-Item -Force -Recurse -ErrorAction SilentlyContinue "$v8d\.gclient", "$v8d\.gclient_entries", "$v8d\.cipd"
     }
-    if (-not (Ensure-Cmake)) { Die "Cần CMake để biên dịch." }
+    if (-not (Ensure-Cmake)) { Die "Cần CMake 3.x để biên dịch (xem dòng [!] ở trên)." }
+    # xóa cấu hình CMake dở dang của lần chạy lỗi trước (heif/x265, libde265, libheif)
+    Get-ChildItem "$Work\core\Common\3dParty\heif\*\build" -Recurse -Filter CMakeCache.txt -ErrorAction SilentlyContinue |
+        ForEach-Object { Remove-Item -Force $_.FullName; Remove-Item -Recurse -Force "$($_.DirectoryName)\CMakeFiles" -ErrorAction SilentlyContinue }
     # build_tools gọi trực tiếp "./make.py" cho brotli/harfbuzz: trên Windows sẽ mở tệp bằng trình soạn thảo
     # (theo liên kết tệp .py) thay vì chạy. Sửa thành "python ./make.py".
     foreach ($m in "oo_brotli.py", "harfbuzz.py") {
