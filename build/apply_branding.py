@@ -63,7 +63,7 @@ def notice(brand: dict, style: str) -> str:
     text = (f"Modified by {brand['publisher']} on {brand['modified_date']}: branding for "
             f"{brand['product_name']} (based on {brand['upstream_name']} {brand['upstream_version']}).")
     return {"c": f"/* {text} */\n", "html": f"<!-- {text} -->\n", "m4": f"dnl {text}\n",
-            "iss": f"; {text}\n"}[style]
+            "iss": f"; {text}\n", "pas": f"// {text}\n"}[style]
 
 
 def patch(work: Path, repo: str, rel: str, pairs: list[tuple[str, str]], brand: dict, style: str,
@@ -338,7 +338,7 @@ def main():
     # Bộ cài: không cài dịch vụ cập nhật (trùng tên với dịch vụ của ONLYOFFICE), ghi CheckForUpdates=0
     patch(work, "desktop-apps", "package/inno/_code.iss", [
         ("if CheckCommandlineParam('/noupdates') then begin", "if True then begin { AV-SOFT: luôn tắt cập nhật }"),
-    ], brand, "iss", critical=True)
+    ], brand, "pas", critical=True)   # _code.iss nằm trong mục [Code] (Pascal): chú thích dùng //
     # Bộ cài: dùng các tệp ngôn ngữ Inno Setup kèm theo (gồm bản tiếng Việt không chính thức)
     patch(work, "desktop-apps", "package/inno/common.iss", [
         ("MessagesFile: compiler:Languages\\", "MessagesFile: avsoft-isl\\"),
