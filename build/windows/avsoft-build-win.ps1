@@ -72,23 +72,23 @@ function Find-Iscc {
 }
 
 function Ensure-Cmake {
-    # heif/x265 cần CMake 3.x (CMake 4 đã bỏ hỗ trợ cmake_policy(... OLD) mà x265 dùng).
-    # Ưu tiên CMake 3.x đi kèm VS 2019, sau đó mới tới bản cài riêng.
+    # Cần CMake 3.25 – 3.x: x265 không chạy với CMake 4, libheif (CMakePresets v6) cần >= 3.25.
     $vsRoot = Split-Path (Split-Path (Split-Path $VsPath))
-    $vsCmake = "$vsRoot\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin"
-    if (Test-Path "$vsCmake\cmake.exe") { $env:Path = "$vsCmake;$env:Path" }
-    elseif (-not (Get-Command cmake -ErrorAction SilentlyContinue) -and (Test-Path "$env:ProgramFiles\CMake\bin\cmake.exe")) {
-        $env:Path = "$env:ProgramFiles\CMake\bin;$env:Path" }
-    $c = Get-Command cmake -ErrorAction SilentlyContinue
-    if (-not $c) { Warn "Thiếu CMake (cài: winget install -e --id Kitware.CMake --version 3.31.8)"; return $false }
-    $ver = ((& cmake --version) | Select-Object -First 1) -replace "cmake version ", ""
-    Write-Host "   CMake  : $($c.Source) ($ver)"
-    if ([int]($ver.Split(".")[0]) -ge 4) {
-        Warn "CMake $ver quá mới cho x265 — cài thêm CMake 3.x: winget install -e --id Kitware.CMake --version 3.31.8 (hoặc thành phần 'C++ CMake tools for Windows' của VS 2019)"
-        $env:CMAKE_POLICY_VERSION_MINIMUM = "3.5"
-        return $false
+    $cands = @("$env:ProgramFiles\CMake\bin", "${env:ProgramFiles(x86)}\CMake\bin",
+               "$vsRoot\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin")
+    $found = @()
+    foreach ($d in $cands) {
+        if (Test-Path "$d\cmake.exe") {
+            $v = ((& "$d\cmake.exe" --version) | Select-Object -First 1) -replace "cmake version ", ""
+            $p = $v.Split("."); $found += "$d ($v)"
+            if ([int]$p[0] -eq 3 -and [int]$p[1] -ge 25) {
+                $env:Path = "$d;$env:Path"; Write-Host "   CMake  : $d ($v)"; return $true
+            }
+        }
     }
-    return $true
+    if ($found) { Warn ("CMake hiện có không phù hợp: " + ($found -join "; ")) }
+    Warn "Cần CMake 3.25 – 3.31: winget uninstall -e --id Kitware.CMake ; winget install -e --id Kitware.CMake --version 3.31.8"
+    return $false
 }
 
 function Step-Check {
