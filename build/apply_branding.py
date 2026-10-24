@@ -47,7 +47,8 @@ def log(msg: str):
 
 
 def git(repo: Path, *args: str, check=False) -> str:
-    r = subprocess.run(["git", "-C", str(repo), *args], capture_output=True, text=True)
+    r = subprocess.run(["git", "-C", str(repo), *args], capture_output=True, text=True,
+                       encoding="utf-8", errors="replace")   # Windows: tránh mã hoá cp1252 mặc định
     if check and r.returncode != 0:
         raise RuntimeError(r.stderr)
     return r.stdout
@@ -335,9 +336,9 @@ def main():
     pdir.mkdir(exist_ok=True)
     for repo in REPOS:
         if (work / repo).exists():
-            diff = git(work / repo, "diff", "--binary")
+            diff = git(work / repo, "diff", "--binary") or ""
             if diff.strip():
-                (pdir / f"{repo}.patch").write_text(diff, encoding="utf-8")
+                (pdir / f"{repo}.patch").write_text(diff, encoding="utf-8", newline="\n")
     log(f"bản vá đã lưu tại {pdir}")
 
     if warnings:
