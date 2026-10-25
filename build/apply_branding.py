@@ -307,6 +307,21 @@ def spacing_in_points(work: Path, brand: dict):
         (old_rule, unit_rule),
         loop_fix(["paragraph-spin-spacing-before", "paragraph-spin-spacing-after"]),
     ], brand, "c", critical=True)
+    # Thanh công cụ tab "Bố cục": ô Khoảng cách trước/sau
+    patch(work, "web-apps", "apps/documenteditor/main/app/view/Toolbar.js", [
+        ("""                        var spinner = this.spinners[i].cmp;
+                        spinner.setDefaultUnit(Common.Utils.Metric.getCurrentMetricName());
+                        spinner.setStep(Common.Utils.Metric.getCurrentMetric()==Common.Utils.Metric.c_MetricUnits.pt ? 1 : this.spinners[i].step);""",
+         """                        var spinner = this.spinners[i].cmp;
+                        var _avPt = (spinner === this.numSpacingBefore || spinner === this.numSpacingAfter);   // AV-SOFT: pt
+                        spinner.setDefaultUnit(_avPt ? Common.Utils.Metric.txtPt : Common.Utils.Metric.getCurrentMetricName());
+                        spinner.setStep(_avPt || Common.Utils.Metric.getCurrentMetric()==Common.Utils.Metric.c_MetricUnits.pt ? 1 : this.spinners[i].step);"""),
+    ], brand, "c", critical=True)
+    patch(work, "web-apps", "apps/documenteditor/main/app/controller/PageLayout.js", [
+        ("(num<0) ? -1 : Common.Utils.Metric.fnRecalcToMM(num);", "(num<0) ? -1 : Common.Utils.Metric.fnPtToMM(num);"),
+        ("Common.Utils.Metric.fnRecalcFromMM(before)", "Common.Utils.Metric.fnPtFromMM(before)"),
+        ("Common.Utils.Metric.fnRecalcFromMM(after)", "Common.Utils.Metric.fnPtFromMM(after)"),
+    ], brand, "c", critical=True)
     log("đã đặt khoảng cách đoạn/dòng theo pt (trình soạn thảo văn bản)")
 
 
