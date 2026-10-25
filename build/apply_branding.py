@@ -131,10 +131,12 @@ def make_defines_p(work: Path, brand: dict):
 
 
 def legal_block(brand: dict) -> str:
+    rel = f'Bản phát hành: {brand["upstream_version"]}-{brand["release"]}. ' if brand.get("release") else ''
     return (
         '<div class="about-field avsoft-legal" style="max-width:440px;line-height:1.45;font-size:11px;margin-top:10px;opacity:.85">'
         f'{brand["product_name"]} là phiên bản sửa đổi (ngày {brand["modified_date"]}) của '
         f'{brand["upstream_name"]} {brand["upstream_version"]} — phần mềm gốc do ONLYOFFICE / Ascensio System SIA phát triển. '
+        f'{rel}'
         'Phát hành theo giấy phép GNU AGPL v3 kèm các điều khoản bổ sung. '
         f'<a class="link" target="popup" href="{brand["source_url"]}">Mã nguồn</a> · '
         f'<a class="link" target="popup" href="{brand["license_url"]}">Giấy phép</a>'
