@@ -26,6 +26,7 @@ BRANCH="tags/$TAG"
 VERSION="$(jq_ upstream_version)"
 PRODUCT="$(jq_ product_name)"
 PKG="$(jq_ internal_name)"
+REL="$(python3 -c "import json;print(json.load(open('$HERE/brand.json')).get('release',''))")"
 BT="$WORK/build_tools"
 PY="$BT/tools/linux/python3/bin/python3"
 QT_DIR="$BT/tools/linux/qt_build/Qt-5.9.9"
@@ -136,7 +137,7 @@ step_package() {
   local src
   src="$(ls -d "$BT"/out/linux_64/*/desktopeditors 2>/dev/null | head -1)"
   [[ -n "$src" && -x "$src/DesktopEditors" ]] || die "Không thấy bản biên dịch trong $BT/out/linux_64/*/desktopeditors"
-  local deb="$WORK/dist/${PKG}_${VERSION}_amd64" opt="/opt/$PKG"
+  local deb="$WORK/dist/${PKG}_${VERSION}${REL:+-$REL}_amd64" opt="/opt/$PKG"
   say "Đóng gói $PRODUCT $VERSION"
   rm -rf "$deb"; mkdir -p "$deb$opt" "$deb/usr/bin" "$deb/usr/share/applications" "$deb/usr/share/doc/$PKG" "$deb/DEBIAN"
   cp -a "$src/." "$deb$opt/"
@@ -158,16 +159,16 @@ EOF
   install -m755 "$HERE/build/linux/postinst" "$deb/DEBIAN/postinst"
   install -m755 "$HERE/build/linux/postrm" "$deb/DEBIAN/postrm"
   run_logged dpkg-deb dpkg-deb --build --root-owner-group "$deb"
-  tar -C "$deb$opt/.." -czf "$WORK/dist/${PKG}_${VERSION}_linux_x64_portable.tar.gz" "$(basename "$opt")"
+  tar -C "$deb$opt/.." -czf "$WORK/dist/${PKG}_${VERSION}${REL:+-$REL}_linux_x64_portable.tar.gz" "$(basename "$opt")"
   # Máy Windows + WSL2: tự chép kết quả sang ổ F (thư mục dự án) nếu có
   local proj="${PROJECT_DIR:-/mnt/f/IT/Bawaco/Office}"
   if [[ -d "$proj" ]]; then
-    mkdir -p "$proj/dist" && cp -f "$deb.deb" "$WORK/dist/${PKG}_${VERSION}_linux_x64_portable.tar.gz" "$proj/dist/" \
+    mkdir -p "$proj/dist" && cp -f "$deb.deb" "$WORK/dist/${PKG}_${VERSION}${REL:+-$REL}_linux_x64_portable.tar.gz" "$proj/dist/" \
       && echo "   Đã chép kết quả sang $proj/dist"
   fi
   say "XONG"
   echo "   Gói cài:      $deb.deb"
-  echo "   Bản chạy liền: $WORK/dist/${PKG}_${VERSION}_linux_x64_portable.tar.gz"
+  echo "   Bản chạy liền: $WORK/dist/${PKG}_${VERSION}${REL:+-$REL}_linux_x64_portable.tar.gz"
   echo "   Cài thử:      sudo apt install $deb.deb   rồi mở '$PRODUCT' trong menu ứng dụng"
 }
 

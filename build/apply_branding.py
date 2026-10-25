@@ -250,6 +250,64 @@ def fill_vietnamese(work: Path):
     log(f"đã bổ sung {total} chuỗi tiếng Việt (còn {still} chuỗi hiển thị tiếng Anh)")
 
 
+# ---------------------------------------------------------------- khoảng cách đoạn/dòng theo pt (giống Word, NĐ 30)
+def spacing_in_points(work: Path, brand: dict):
+    """Trình soạn thảo văn bản: Khoảng cách Trước/Sau và khoảng cách dòng "Ít nhất"/"Chính xác" luôn dùng pt,
+    các ô khác (thụt lề, lề, tab...) vẫn theo đơn vị đo người dùng chọn (mặc định cm) — giống Microsoft Word."""
+    M = "Common.Utils.Metric."
+    helpers = ("            fnPtToMM: function (value) {   // AV-SOFT: pt -> mm\n"
+               "                return (value !== null && value !== undefined) ? value * 25.4 / 72.0 : value;\n"
+               "            },\n\n"
+               "            fnPtFromMM: function (value) { // AV-SOFT: mm -> pt (1 chữ số thập phân)\n"
+               "                return parseFloat((value * 72.0 / 25.4).toFixed(1));\n"
+               "            },\n\n"
+               "            fnRecalcFromMM: function (value) {")
+    patch(work, "web-apps", "apps/common/main/lib/util/utils.js", [
+        ("            fnRecalcFromMM: function (value) {", helpers),
+    ], brand, "c", critical=True)
+
+    unit_rule = ("this._arrLineRule[2].defaultUnit =  this._arrLineRule[0].defaultUnit = Common.Utils.Metric.txtPt;   // AV-SOFT: pt\n"
+                 "            this._arrLineRule[2].minValue =  this._arrLineRule[0].minValue = 1;\n"
+                 "            this._arrLineRule[2].step =  this._arrLineRule[0].step = 1;")
+    old_rule = ("this._arrLineRule[2].defaultUnit =  this._arrLineRule[0].defaultUnit = Common.Utils.Metric.getCurrentMetricName();\n"
+                "            this._arrLineRule[2].minValue =  this._arrLineRule[0].minValue = parseFloat(Common.Utils.Metric.fnRecalcFromMM(0.3).toFixed(2));\n"
+                "            this._arrLineRule[2].step =  this._arrLineRule[0].step = (Common.Utils.Metric.getCurrentMetric()==Common.Utils.Metric.c_MetricUnits.pt) ? 1 : 0.01;")
+
+    def loop_fix(ids):
+        cond = " || ".join(f"spinner.el.id == '{i}'" for i in ids)
+        return ("spinner.setDefaultUnit(Common.Utils.Metric.getCurrentMetricName());",
+                f"var _avPt = ({cond});   // AV-SOFT: khoảng cách đoạn luôn theo pt\n"
+                "                    spinner.setDefaultUnit(_avPt ? Common.Utils.Metric.txtPt : Common.Utils.Metric.getCurrentMetricName());\n"
+                "                    if (_avPt) { spinner.setStep(1); continue; }")
+
+    # Hộp thoại "Đoạn văn bản - Cài đặt nâng cao"
+    patch(work, "web-apps", "apps/documenteditor/main/app/view/ParagraphSettingsAdvanced.js", [
+        ("put_Before(value<0 ? -1 : Common.Utils.Metric.fnRecalcToMM(value))", "put_Before(value<0 ? -1 : Common.Utils.Metric.fnPtToMM(value))"),
+        ("put_After(value<0 ? -1 : Common.Utils.Metric.fnRecalcToMM(value))", "put_After(value<0 ? -1 : Common.Utils.Metric.fnPtToMM(value))"),
+        ("(value<0 ? value : Common.Utils.Metric.fnRecalcFromMM(value))", "(value<0 ? value : Common.Utils.Metric.fnPtFromMM(value))"),
+        ("Common.Utils.Metric.fnRecalcFromMM(props.get_Spacing().get_Line())", "Common.Utils.Metric.fnPtFromMM(props.get_Spacing().get_Line())"),
+        ("Common.Utils.Metric.fnRecalcFromMM(this._arrLineRule[record.value].defaultValue)", "Common.Utils.Metric.fnPtFromMM(this._arrLineRule[record.value].defaultValue)"),
+        ("? field.getNumberValue() : Common.Utils.Metric.fnRecalcToMM(field.getNumberValue()));", "? field.getNumberValue() : Common.Utils.Metric.fnPtToMM(field.getNumberValue()));"),
+        (old_rule, unit_rule),
+        loop_fix(["paragraphadv-spin-spacing-before", "paragraphadv-spin-spacing-after"]),
+    ], brand, "c", critical=True)
+
+    # Thanh cài đặt Đoạn văn bên phải
+    patch(work, "web-apps", "apps/documenteditor/main/app/view/ParagraphSettings.js", [
+        ("? field.getNumberValue() : Common.Utils.Metric.fnRecalcToMM(field.getNumberValue()));", "? field.getNumberValue() : Common.Utils.Metric.fnPtToMM(field.getNumberValue()));"),
+        ("(num<0) ? -1 : Common.Utils.Metric.fnRecalcToMM(num);", "(num<0) ? -1 : Common.Utils.Metric.fnPtToMM(num);"),
+        ("val = Common.Utils.Metric.fnRecalcFromMM(line);", "val = Common.Utils.Metric.fnPtFromMM(line);"),
+        ("val = Common.Utils.Metric.fnRecalcFromMM(Spacing.Line);", "val = Common.Utils.Metric.fnPtFromMM(Spacing.Line);"),
+        ("val = Common.Utils.Metric.fnRecalcFromMM(this._state.LineHeight);", "val = Common.Utils.Metric.fnPtFromMM(this._state.LineHeight);"),
+        ("Common.Utils.Metric.fnRecalcFromMM(Spacing.Before)", "Common.Utils.Metric.fnPtFromMM(Spacing.Before)"),
+        ("Common.Utils.Metric.fnRecalcFromMM(Spacing.After)", "Common.Utils.Metric.fnPtFromMM(Spacing.After)"),
+        ("((val<0) ? val : Common.Utils.Metric.fnRecalcFromMM(val) )", "((val<0) ? val : Common.Utils.Metric.fnPtFromMM(val) )"),
+        (old_rule, unit_rule),
+        loop_fix(["paragraph-spin-spacing-before", "paragraph-spin-spacing-after"]),
+    ], brand, "c", critical=True)
+    log("đã đặt khoảng cách đoạn/dòng theo pt (trình soạn thảo văn bản)")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--work", required=True, help="thư mục chứa build_tools và các kho ONLYOFFICE")
@@ -304,6 +362,7 @@ def main():
          '                        , help: false\n                        , uiTheme: urlParams["uitheme"]'),
     ], brand, "html")
     disable_bundled_help(work)
+    spacing_in_points(work, brand)
     if brand.get("nd30_template"):
         nd30_template(work, brand)
     fill_vietnamese(work)

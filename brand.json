@@ -16,5 +16,6 @@
   "welcome_en": "Welcome to AV-SOFT Office!",
   "help_url": "https://github.com/anhvunguyen1975/avsoft-office#readme",
   "feedback_url": "https://github.com/anhvunguyen1975/avsoft-office/issues",
-  "nd30_template": true
+  "nd30_template": true,
+  "release": "avsoft.3"
 }

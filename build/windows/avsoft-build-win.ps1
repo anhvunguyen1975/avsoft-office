@@ -250,7 +250,8 @@ function Step-Package {
     Run "package-inno"    "powershell -NoProfile -ExecutionPolicy Bypass -File make_inno.ps1 -Version $Version -Arch x64" $pkg
     $out = Get-ChildItem "$pkg\inno\*.exe" | Where-Object { $_.Name -notlike "vc_redist*" } | Sort-Object LastWriteTime -Descending | Select-Object -First 1
     if (-not $out) { Die "Không thấy tệp .exe bộ cài trong $pkg\inno" }
-    $final = "$Work\dist\$($Brand.internal_name)-$($Brand.upstream_version)-x64-setup.exe"
+    $rel = if ($Brand.release) { "-$($Brand.release)" } else { "" }
+    $final = "$Work\dist\$($Brand.internal_name)-$($Brand.upstream_version)$rel-x64-setup.exe"
     Copy-Item -Force $out.FullName $final
     Say "XONG"
     Write-Host "   Bộ cài: $final"
