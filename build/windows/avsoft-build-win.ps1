@@ -23,7 +23,7 @@ param(
 
 $ErrorActionPreference = "Continue"
 chcp 65001 > $null
-try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
+try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8; $OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
 $env:PYTHONIOENCODING = "utf-8"
 
 $Here  = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)      # gốc kho avsoft-office
