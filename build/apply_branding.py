@@ -39,6 +39,23 @@ LOGINPAGE_VI_EXTRA = """    menuFilePin: 'Ghim',
     tplFileSize: 'Dung lượng tệp',
     tplFileType: 'Loại tệp',"""
 
+INNO_VI_EXTRA = """vi.PrevVer =Đã phát hiện phiên bản cũ của {#sAppName}, hãy nhấn 'OK' để gỡ bỏ, hoặc 'Hủy' để thoát cài đặt.
+vi.ErrorMismatchInstalledType =Phiên bản đã cài được triển khai bằng loại bộ cài khác. Hãy dùng đúng gói cài hoặc gỡ phiên bản hiện có trước khi tiếp tục.
+vi.ErrorMismatchInstalledArch =Kiến trúc của phiên bản đã cài không khớp với gói này. Hãy dùng đúng gói cài hoặc gỡ phiên bản hiện có trước khi tiếp tục.
+vi.ErrorMismatchInstalledEdition =Ấn bản của phiên bản đã cài không khớp với gói này. Hãy dùng đúng gói cài hoặc gỡ phiên bản hiện có trước khi tiếp tục.
+vi.extPOT =Mẫu PowerPoint
+vi.extPPTM =Bản trình bày PowerPoint có macro
+vi.extEPUB =Tệp sách điện tử EPUB
+vi.extFB2 =Tệp FictionBook 2.0
+vi.extDOTX =Mẫu tài liệu Word
+vi.extXLSB =Sổ làm việc Excel nhị phân
+vi.extXLSM =Sổ làm việc Excel có macro
+vi.extFODS =Bảng tính OpenDocument XML phẳng
+vi.extFODT =Tài liệu OpenDocument XML phẳng
+vi.extVSDX =Bản vẽ Visio
+vi.UninstallPageLabel =Nhấn Gỡ cài đặt để tiếp tục gỡ bỏ.
+vi.UninstallOptionClearData =Xóa toàn bộ cài đặt người dùng và dữ liệu đệm của ứng dụng"""
+
 warnings: list[str] = []
 
 
@@ -415,9 +432,21 @@ def main():
     patch(work, "desktop-apps", "package/inno/_code.iss", [
         ("if CheckCommandlineParam('/noupdates') then begin", "if True then begin { AV-SOFT: luôn tắt cập nhật }"),
     ], brand, "pas", critical=True)   # _code.iss nằm trong mục [Code] (Pascal): chú thích dùng //
+    # Bộ cài: dịch tiếng Việt các thông báo còn thiếu
+    patch(work, "desktop-apps", "package/inno/_messages.iss", [
+        ("vi.AppLocale =vi-VN", "vi.AppLocale =vi-VN\n" + INNO_VI_EXTRA),
+    ], brand, "iss")
     # Bộ cài: dùng các tệp ngôn ngữ Inno Setup kèm theo (gồm bản tiếng Việt không chính thức)
     patch(work, "desktop-apps", "package/inno/common.iss", [
         ("MessagesFile: compiler:Languages\\", "MessagesFile: avsoft-isl\\"),
+        # Tự phát hiện và đóng AV-SOFT đang chạy (kể cả tiến trình chạy ngầm) trước khi chép đè tệp,
+        # tránh lỗi "MoveFile thất bại; mã lỗi 5 / Access is denied" khi cài bản mới.
+        # Restart Manager chỉ đóng tiến trình đang dùng tệp trong thư mục cài AV-SOFT (không đụng ONLYOFFICE).
+        ("SetupMutex                =ASC",
+         "SetupMutex                =AVSOFT_OFFICE_SETUP\n"
+         "CloseApplications         =force\n"
+         "CloseApplicationsFilter   =*.exe,*.dll\n"
+         "RestartApplications       =no"),
     ], brand, "iss")
 
     # --- xuất bản vá để công bố mã nguồn
