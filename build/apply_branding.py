@@ -360,6 +360,12 @@ def main():
         ('"ONLYOFFICE Desktop Editors\\0"', f'"{brand["product_name"]} (based on ONLYOFFICE Desktop Editors)\\0"'),
         ('#define VER_PRODUCTNAME_STR         "ONLYOFFICE\\0"', f'#define VER_PRODUCTNAME_STR         "{brand["product_name"]}\\0"'),
     ], brand, "c")
+    # DesktopEditors.exe (projicons: biểu tượng tệp + trình khởi chạy, đích của lối tắt và liên kết tệp)
+    patch(work, "desktop-apps", "win-linux/extras/projicons/src/version.h", [
+        ('#define VER_FILEDESCRIPTION_STR     "ONLYOFFICE Editors\\0"',
+         f'#define VER_FILEDESCRIPTION_STR     "{brand["product_name"]} (based on ONLYOFFICE Desktop Editors)\\0"'),
+        ('#define VER_PRODUCTNAME_STR         "ONLYOFFICE Editors\\0"', f'#define VER_PRODUCTNAME_STR         "{brand["product_name"]}\\0"'),
+    ], brand, "c")
 
     # --- tắt cập nhật tự động: máy chủ/dịch vụ cập nhật là của ONLYOFFICE (sẽ tải bản ONLYOFFICE đè lên)
     patch(work, "desktop-apps", "win-linux/src/utils.cpp", [
@@ -442,6 +448,12 @@ def main():
         # Tự phát hiện và đóng AV-SOFT đang chạy (kể cả tiến trình chạy ngầm) trước khi chép đè tệp,
         # tránh lỗi "MoveFile thất bại; mã lỗi 5 / Access is denied" khi cài bản mới.
         # Restart Manager chỉ đóng tiến trình đang dùng tệp trong thư mục cài AV-SOFT (không đụng ONLYOFFICE).
+        # Không xoá lối tắt "ONLYOFFICE Editors.lnk" (tên lối tắt của ONLYOFFICE bản cũ) trên màn hình chung:
+        # máy cài song song ONLYOFFICE sẽ mất biểu tượng ONLYOFFICE khi cài AV-SOFT.
+        ('Type: files; Name: "{commondesktop}\\{#sOldAppIconName}.lnk"; Tasks: desktopicon;',
+         '; AV-SOFT: bỏ — Type: files; Name: "{commondesktop}\\{#sOldAppIconName}.lnk"; Tasks: desktopicon;'),
+        ('Type: files; Name: "{group}\\{#sOldAppIconName}.lnk";',
+         '; AV-SOFT: bỏ — Type: files; Name: "{group}\\{#sOldAppIconName}.lnk";'),
         ("SetupMutex                =ASC",
          "SetupMutex                =AVSOFT_OFFICE_SETUP\n"
          "CloseApplications         =force\n"

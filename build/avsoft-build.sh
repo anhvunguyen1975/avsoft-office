@@ -139,6 +139,11 @@ step_package() {
   local src
   src="$(ls -d "$BT"/out/linux_64/*/desktopeditors 2>/dev/null | head -1)"
   [[ -n "$src" && -x "$src/DesktopEditors" ]] || die "Không thấy bản biên dịch trong $BT/out/linux_64/*/desktopeditors"
+  # Chặn đóng gói khi chưa biên dịch lại sau khi tăng "release" trong brand.json
+  if [[ -n "$REL" ]]; then
+    grep -qF "Bản phát hành: ${FULLVER}." "$src/index.html" 2>/dev/null \
+      || die "Bản biên dịch chưa phải $FULLVER ('Về ứng dụng' còn số cũ). Chạy lại: brand → build → package."
+  fi
   local deb="$WORK/dist/${PKG}_${FULLVER}_amd64" opt="/opt/$PKG"
   say "Đóng gói $PRODUCT $FULLVER"
   rm -rf "$deb"; mkdir -p "$deb$opt" "$deb/usr/bin" "$deb/usr/share/applications" "$deb/usr/share/doc/$PKG" "$deb/DEBIAN"

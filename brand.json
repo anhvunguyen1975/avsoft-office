@@ -6,7 +6,7 @@
   "upstream_name": "ONLYOFFICE Desktop Editors",
   "upstream_tag": "v9.4.0.131",
   "upstream_version": "9.4.0",
-  "modified_date": "2026-10-22",
+  "modified_date": "2026-10-28",
   "default_locale": "vi-VN",
   "site_url": "https://github.com/anhvunguyen1975/avsoft-office",
   "source_url": "https://github.com/anhvunguyen1975/avsoft-office",
@@ -17,5 +17,5 @@
   "help_url": "https://github.com/anhvunguyen1975/avsoft-office#readme",
   "feedback_url": "https://github.com/anhvunguyen1975/avsoft-office/issues",
   "nd30_template": true,
-  "release": "avsoft.5"
+  "release": "avsoft.6"
 }

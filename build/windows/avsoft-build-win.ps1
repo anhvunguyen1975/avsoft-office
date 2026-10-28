@@ -239,6 +239,16 @@ function Step-Package {
     if (-not $exe) { Die "Không thấy bản biên dịch (DesktopEditors.exe) trong $BT\out\win_64" }
     $src = $exe.DirectoryName
     Write-Host "   Bản biên dịch: $src"
+    # Chặn đóng gói khi chưa biên dịch lại sau khi tăng "release" trong brand.json
+    # (avsoft.5 từng bị: bộ cài mới nhưng "Về ứng dụng" vẫn ghi avsoft.4)
+    if ($Brand.release) {
+        $want = "$($Brand.upstream_version)-$($Brand.release)"
+        $idx = Join-Path $src "index.html"
+        if (-not (Test-Path $idx) -or -not (Select-String -Path $idx -SimpleMatch "Bản phát hành: $want." -Encoding UTF8 -Quiet)) {
+            Die "Bản biên dịch chưa phải $want (trang Về ứng dụng còn số cũ). Chạy lại: -Step brand, rồi -Step build, rồi -Step package."
+        }
+        Write-Host "   Đúng bản phát hành: $want"
+    }
     $iscc = Find-Iscc
     if (-not $iscc) { Die "Không thấy Inno Setup 6." }
     $env:INNOPATH = $iscc
