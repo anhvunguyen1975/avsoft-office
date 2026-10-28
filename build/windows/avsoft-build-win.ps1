@@ -231,6 +231,11 @@ function Step-Build {
     }
     $cleanOpt = if ($Clean) { "1" } else { "0" }
     Run "configure-build" (Configure "0" $cleanOpt) $BT
+    # nmake chỉ dịch lại tài nguyên .rc khi chính tệp .rc đổi, không theo dõi version.h mà nó #include
+    # (avsoft.6 lần đầu: DesktopEditors.exe vẫn mang tên ONLYOFFICE) -> chạm vào các tệp .rc để luôn dịch lại.
+    foreach ($rc in "$Work\desktop-apps\win-linux\extras\projicons\version.rc", "$Work\desktop-apps\win-linux\version.rc") {
+        if (Test-Path $rc) { (Get-Item $rc).LastWriteTime = Get-Date }
+    }
     Run "make" "`"$PY`" make.py" $BT
 }
 
@@ -248,6 +253,11 @@ function Step-Package {
             Die "Bản biên dịch chưa phải $want (trang Về ứng dụng còn số cũ). Chạy lại: -Step brand, rồi -Step build, rồi -Step package."
         }
         Write-Host "   Đúng bản phát hành: $want"
+    }
+    # DesktopEditors.exe (đích của lối tắt / liên kết tệp) phải mang tên AV-SOFT
+    $pn = (Get-Item (Join-Path $src "DesktopEditors.exe")).VersionInfo.ProductName
+    if ($pn -ne $Brand.product_name) {
+        Die "DesktopEditors.exe còn tên `"$pn`" (chưa dịch lại projicons). Chạy lại -Step build rồi -Step package."
     }
     $iscc = Find-Iscc
     if (-not $iscc) { Die "Không thấy Inno Setup 6." }
